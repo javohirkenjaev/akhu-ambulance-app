@@ -20,13 +20,12 @@
       --silver: #cbd5e1;
       --bronze: #d97706;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); padding-bottom: 86px; -webkit-tap-highlight-color: transparent; }
 
     .header {
       position: sticky; top: 0; z-index: 20;
-      background: rgba(11, 15, 25, 0.9); backdrop-filter: blur(14px);
+      background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--card-border);
       padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
     }
@@ -42,12 +41,10 @@
     }
 
     .container { padding: 14px 16px; max-width: 520px; margin: 0 auto; }
-    .section { display: none; animation: fadeIn 0.2s ease; }
+    .section { display: none; }
     .section.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-    .chips::-webkit-scrollbar { display: none; }
+    .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; }
     .chip {
       background: var(--card); border: 1px solid var(--card-border); color: var(--muted);
       padding: 7px 14px; border-radius: 99px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
@@ -69,7 +66,7 @@
 
     .btn {
       width: 100%; border: none; border-radius: 12px; padding: 11px;
-      font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.15s;
+      font-size: 14px; font-weight: 700; cursor: pointer;
     }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: #fff; }
@@ -91,7 +88,6 @@
       width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
       border-radius: 12px; padding: 11px 12px; color: var(--text); font-size: 14px; outline: none;
     }
-    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
     .type-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .type-opt {
       text-align: center; padding: 10px; border-radius: 12px; border: 1px solid var(--card-border);
@@ -122,7 +118,7 @@
 
     .nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
-      background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(16px);
+      background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(16px);
       border-top: 1px solid var(--card-border);
       display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 4px 12px;
     }
@@ -131,166 +127,4 @@
       display: flex; flex-direction: column; align-items: center; gap: 4px;
       font-size: 11px; font-weight: 600; cursor: pointer;
     }
-    .nav-btn.active { color: var(--primary); }
-    .nav-icon { font-size: 20px; }
-  </style>
-</head>
-<body>
-
-  <div class="header">
-    <div class="brand">
-      <div class="brand-badge">🚑</div>
-      <span>AKHU Ambulance</span>
-    </div>
-    <div class="user-pill" id="myPointsBadge">⭐️ 0 ball</div>
-  </div>
-
-  <div class="container">
-    <!-- 1. LENTA -->
-    <div id="sec-feed" class="section active">
-      <div class="chips">
-        <div class="chip active" onclick="setTypeFilter('all', this)">Barchasi</div>
-        <div class="chip" onclick="setTypeFilter('sos', this)">🆘 Tezkor SOS</div>
-        <div class="chip" onclick="setTypeFilter('lost', this)">🔍 Topildi / Yo‘qoldi</div>
-      </div>
-      <div id="feedList"><div class="card" style="text-align:center;color:var(--muted);">Yuklanmoqda...</div></div>
-    </div>
-
-    <!-- 2. RADAR -->
-    <div id="sec-radar" class="section">
-      <h3 style="margin-bottom: 10px; font-size: 16px;">📡 Bino bo‘yicha qidiruv</h3>
-      <div class="radar-grid" id="buildingGrid"></div>
-      <div id="radarList"></div>
-    </div>
-
-    <!-- 3. + E'LON -->
-    <div id="sec-add" class="section">
-      <h3 style="margin-bottom: 12px; font-size: 16px;">➕ Yangi e'lon joylash</h3>
-      <div class="type-switch">
-        <div class="type-opt sos active" id="opt-sos" onclick="selectPostType('sos')">🆘 Tezkor Yordam</div>
-        <div class="type-opt lost" id="opt-lost" onclick="selectPostType('lost')">🔍 Topildi / Yo‘qoldi</div>
-      </div>
-
-      <div class="form-group">
-        <label>Toifa (o‘zingiz istalganini yozishingiz mumkin)</label>
-        <input type="text" id="postCategory" placeholder="Masalan: Type-C zaryadnik, Konspekt, Kalit..." />
-      </div>
-
-      <div class="form-group">
-        <label>Bino</label>
-        <select id="postBuilding">
-          <option value="IT bino">IT bino</option>
-          <option value="Asosiy bino">Asosiy bino</option>
-          <option value="Kutubxona">Kutubxona</option>
-          <option value="Sport zali">Sport zali</option>
-          <option value="Yotoqxona">Yotoqxona</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Aniq joylashuv</label>
-        <input type="text" id="postLocation" placeholder="Masalan: 3-qavat, 305-xona oldi" />
-      </div>
-
-      <div class="form-group">
-        <label>Batafsil izoh</label>
-        <textarea id="postDesc" rows="3" placeholder="Holatni qisqacha tushuntiring..."></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Rasm biriktirish (ixtiyoriy)</label>
-        <input type="file" id="postPhoto" accept="image/*" />
-      </div>
-
-      <button class="btn btn-primary" id="submitBtn" onclick="submitPost()">🚀 E'lonni joylash</button>
-    </div>
-
-    <!-- 4. REYTING -->
-    <div id="sec-rank" class="section">
-      <div class="podium" id="podiumBox"></div>
-      <div id="leaderboardList"></div>
-
-      <div class="card" style="margin-top: 14px;">
-        <div class="card-title">🏅 Ball ishlash qoidalari</div>
-        <div class="card-desc" style="margin-bottom: 0;">
-          • Har bir yakunlangan yordam uchun: <b>+15 ball</b><br>
-          • E'lon joylanganda barcha talabalarga bot orqali tezkor bildirishnoma yuboriladi.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Navigation -->
-  <div class="nav">
-    <button class="nav-btn active" onclick="switchTab('feed', this)"><span class="nav-icon">🔥</span>Lenta</button>
-    <button class="nav-btn" onclick="switchTab('radar', this)"><span class="nav-icon">📡</span>Radar</button>
-    <button class="nav-btn" onclick="switchTab('add', this)"><span class="nav-icon">➕</span>E'lon</button>
-    <button class="nav-btn" onclick="switchTab('rank', this)"><span class="nav-icon">🏆</span>Reyting</button>
-  </div>
-
-  <script>
-    const API_BASE = "https://advertise-movements-dogs-respect.trycloudflare.com";
-
-    const tg = window.Telegram?.WebApp;
-    if (tg) { tg.ready(); tg.expand(); }
-
-    const tgUser = tg?.initDataUnsafe?.user;
-    const userId = tgUser?.id || 100001;
-    const fullName = tgUser
-      ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim()
-      : "Javohir Kenjayev";
-    const username = tgUser?.username || "";
-
-    let currentTypeFilter = "all";
-    let selectedBuilding = "IT bino";
-    let newPostType = "sos";
-    let posts = [];
-    let leaderboard = [];
-
-    function timeAgo(ts) {
-      if (!ts) return "Hozirgina";
-      const diff = Math.floor(Date.now() / 1000) - ts;
-      if (diff < 60) return "Hozirgina";
-      if (diff < 3600) return `${Math.floor(diff / 60)} daqiqa oldin`;
-      if (diff < 86400) return `${Math.floor(diff / 3600)} soat oldin`;
-      return `${Math.floor(diff / 86400)} kun oldin`;
-    }
-
-    async function loadServerData() {
-      try {
-        const url = `${API_BASE}/api/init?user_id=${userId}&full_name=${encodeURIComponent(fullName)}&username=${encodeURIComponent(username)}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        document.getElementById("myPointsBadge").innerText = `⭐️ ${data.user?.points || 0} ball`;
-        posts = data.posts || [];
-        leaderboard = data.leaderboard || [];
-        renderFeed();
-        renderRadar();
-        renderLeaderboard();
-      } catch (e) {
-        document.getElementById("feedList").innerHTML =
-          `<div class="card" style="text-align:center;color:#fca5a5;">Server bilan aloqa uzildi. Backend ishlayotganini tekshiring.</div>`;
-      }
-    }
-
-    function switchTab(tab, el) {
-      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById("sec-" + tab).classList.add("active");
-      el.classList.add("active");
-      if (tab === "feed") renderFeed();
-      if (tab === "radar") renderRadar();
-      if (tab === "rank") renderLeaderboard();
-    }
-
-    function setTypeFilter(type, el) {
-      currentTypeFilter = type;
-      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-      el.classList.add("active");
-      renderFeed();
-    }
-
-    function renderFeed() {
-      const list = document.getElementById("feedList");
-      const filtered = currentTypeFilter === "all" ? posts : posts.filter(p => p.req_type === currentTypeFilter);
-      if (!filtered.length) {
+    .
