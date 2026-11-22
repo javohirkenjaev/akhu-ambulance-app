@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AKHU Ambulance</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --sos: #ef4444;
+      --lost: #f59e0b;
+      --green: #10b981;
+      --gold: #fbbf24;
+      --silver: #cbd5e1;
+      --bronze: #d97706;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 86px; -webkit-tap-highlight-color: transparent; }
+
+    /* Header */
+    .header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+    .brand-badge {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      width: 34px; height: 34px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 18px;
+    }
+    .user-pill {
+      background: var(--card); border: 1px solid var(--card-border);
+      padding: 6px 10px; border-radius: 99px; font-size: 12px; color: var(--gold); font-weight: 600;
+    }
+
+    .container { padding: 14px 16px; max-width: 520px; margin: 0 auto; }
+    .section { display: none; animation: fadeIn 0.2s ease; }
+    .section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Filter Chips */
+    .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      background: var(--card); border: 1px solid var(--card-border); color: var(--muted);
+      padding: 7px 14px; border-radius: 99px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
+    }
+    .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Cards */
+    .card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 16px; padding: 14px; margin-bottom: 12px;
+    }
+    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .tag { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 8px; text-transform: uppercase; }
+    .tag.sos { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .tag.lost { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+    .time { font-size: 12px; color: var(--muted); }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .card-desc { font-size: 14px; color: #cbd5e1; line-height: 1.45; margin-bottom: 10px; }
+    .card-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .card-img { width: 100%; max-height: 190px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
+
+    .btn {
+      width: 100%; border: none; border-radius: 12px; padding: 11px;
+      font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-green { background: var(--green); color: #042f2e; }
+    .btn-done { background: rgba(16, 185, 129, 0.15); color: var(--green); cursor: default; }
+
+    /* Radar Grid */
+    .radar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .building-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 14px; cursor: pointer;
+    }
+    .building-card.active { border-color: var(--primary); background: rgba(59, 130, 246, 0.15); }
+    .b-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .b-count { font-size: 12px; color: var(--muted); }
+
+    /* Form */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    input, select, textarea {
+      width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 11px 12px; color: var(--text); font-size: 14px; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    .type-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .type-opt {
+      text-align: center; padding: 10px; border-radius: 12px; border: 1px solid var(--card-border);
+      background: var(--card); font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+    .type-opt.active.sos { background: rgba(239, 68, 68, 0.25); border-color: var(--sos); color: #fca5a5; }
+    .type-opt.active.lost { background: rgba(245, 158, 11, 0.25); border-color: var(--lost); color: #fcd34d; }
+
+    /* Podium & Leaderboard */
+    .podium { display: flex; align-items: flex-end; justify-content: center; gap: 10px; margin: 16px 0 20px; text-align: center; }
+    .p-col { flex: 1; background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 10px 6px; }
+    .p-1 { border-color: var(--gold); background: rgba(251, 191, 36, 0.12); padding-bottom: 18px; }
+    .p-2 { border-color: var(--silver); }
+    .p-3 { border-color: var(--bronze); }
+    .p-medal { font-size: 24px; margin-bottom: 4px; }
+    .p-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .p-pts { font-size: 12px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+
+    .rank-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 11px 14px; margin-bottom: 8px;
+    }
+    .rank-left { display: flex; align-items: center; gap: 10px; }
+    .rank-num { font-weight: 800; color: var(--muted); width: 22px; }
+    .rank-info h4 { font-size: 14px; }
+    .rank-info span { font-size: 12px; color: var(--muted); }
+    .rank-pts { font-weight: 800; color: var(--green); font-size: 14px; }
+
+    /* Bottom Nav */
+    .nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 4px 12px;
+    }
+    .nav-btn {
+      background: none; border: none; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; cursor: pointer;
+    }
+    .nav-btn.active { color: var(--primary); }
+    .nav-icon { font-size: 20px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">
+      <div class="brand-badge">🚑</div>
+      <span>AKHU Ambulance</span>
+    </div>
+    <div class="user-pill" id="myPointsBadge">⭐️ 40 ball</div>
+  </div>
+
+  <div class="container">
+    <!-- 1. LENTA -->
+    <div id="sec-feed" class="section active">
+      <div class="chips">
+        <div class="chip active" onclick="setTypeFilter('all', this)">Barchasi</div>
+        <div class="chip" onclick="setTypeFilter('sos', this)">🆘 Tezkor SOS</div>
+        <div class="chip" onclick="setTypeFilter('lost', this)">🔍 Topildi / Yo‘qoldi</div>
+      </div>
+      <div id="feedList"></div>
+    </div>
+
+    <!-- 2. RADAR -->
+    <div id="sec-radar" class="section">
+      <h3 style="margin-bottom: 10px; font-size: 16px;">📡 Bino bo‘yicha qidiruv</h3>
+      <div class="radar-grid" id="buildingGrid"></div>
+      <div id="radarList"></div>
+    </div>
+
+    <!-- 3. + E'LON -->
+    <div id="sec-add" class="section">
+      <h3 style="margin-bottom: 12px; font-size: 16px;">➕ Yangi e'lon joylash</h3>
+      <div class="type-switch">
+        <div class="type-opt sos active" id="opt-sos" onclick="selectPostType('sos')">🆘 Tezkor Yordam</div>
+        <div class="type-opt lost" id="opt-lost" onclick="selectPostType('lost')">🔍 Topildi / Yo‘qoldi</div>
+      </div>
+
+      <div class="form-group">
+        <label>Toifa (o‘zingiz istalganini yozishingiz mumkin)</label>
+        <input type="text" id="postCategory" placeholder="Masalan: Type-C zaryadnik, Konspekt, Kalit..." />
+      </div>
+
+      <div class="form-group">
+        <label>Bino</label>
+        <select id="postBuilding">
+          <option value="IT bino">IT bino</option>
+          <option value="Asosiy bino">Asosiy bino</option>
+          <option value="Kutubxona">Kutubxona</option>
+          <option value="Sport zali">Sport zali</option>
+          <option value="Yotoqxona">Yotoqxona</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Aniq joylashuv</label>
+        <input type="text" id="postLocation" placeholder="Masalan: 3-qavat, 305-xona oldi" />
+      </div>
+
+      <div class="form-group">
+        <label>Batafsil izoh</label>
+        <textarea id="postDesc" rows="3" placeholder="Holatni qisqacha tushuntiring..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Rasm biriktirish (ixtiyoriy)</label>
+        <input type="file" id="postPhoto" accept="image/*" />
+      </div>
+
+      <button class="btn btn-primary" onclick="submitPost()">🚀 E'lonni joylash</button>
+    </div>
+
+    <!-- 4. REYTING -->
+    <div id="sec-rank" class="section">
+      <div class="chips">
