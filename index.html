@@ -215,3 +215,240 @@
     <!-- 4. REYTING -->
     <div id="sec-rank" class="section">
       <div class="chips">
+        <div class="chip active" onclick="setGroupFilter('all', this)">Barcha guruhlar</div>
+        <div class="chip" onclick="setGroupFilter('DI', this)">DI</div>
+        <div class="chip" onclick="setGroupFilter('KI', this)">KI</div>
+        <div class="chip" onclick="setGroupFilter('AT', this)">AT</div>
+        <div class="chip" onclick="setGroupFilter('MT', this)">MT</div>
+      </div>
+
+      <div class="podium" id="podiumBox"></div>
+      <div id="leaderboardList"></div>
+
+      <div class="card" style="margin-top: 14px;">
+        <div class="card-title">🏅 Ball ishlash qoidalari</div>
+        <div class="card-desc" style="margin-bottom: 0;">
+          • SOS e'longa tezkor yordam berish: <b>+15 ball</b><br>
+          • Yo‘qolgan buyumni topib egasiga qaytarish: <b>+20 ball</b><br>
+          • Haftalik Top-3 talabalarga maxsus nishon beriladi.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="nav">
+    <button class="nav-btn active" onclick="switchTab('feed', this)"><span class="nav-icon">🔥</span>Lenta</button>
+    <button class="nav-btn" onclick="switchTab('radar', this)"><span class="nav-icon">📡</span>Radar</button>
+    <button class="nav-btn" onclick="switchTab('add', this)"><span class="nav-icon">➕</span>E'lon</button>
+    <button class="nav-btn" onclick="switchTab('rank', this)"><span class="nav-icon">🏆</span>Reyting</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
+
+    let currentUser = tg?.initDataUnsafe?.user?.first_name
+      ? `${tg.initDataUnsafe.user.first_name} ${tg.initDataUnsafe.user.last_name || ''}`.trim()
+      : "Javohir Kenjayev";
+
+    let myPoints = 40;
+    let currentTypeFilter = "all";
+    let selectedBuilding = "IT bino";
+    let newPostType = "sos";
+    let currentGroupFilter = "all";
+
+    let posts = [
+      {
+        id: 1, type: "sos", category: "Type-C Zaryadnik", building: "IT bino",
+        location: "3-qavat, 304-xona", desc: "Noutbuk quvvati 4% qoldi, 30 daqiqaga Type-C zaryadnik kerak.",
+        author: "Azizbek R.", time: "3 daqiqa oldin", helped: false, photo: null
+      },
+      {
+        id: 2, type: "lost", category: "Qora AirPods g‘ilofi", building: "Kutubxona",
+        location: "2-zal, deraza yonidagi stol", desc: "Qora silikon g‘ilofli AirPods topib olindi. Egasiga qaytaraman.",
+        author: "Robiya M.", time: "14 daqiqa oldin", helped: false, photo: null
+      },
+      {
+        id: 3, type: "sos", category: "Kalkulyator", building: "Asosiy bino",
+        location: "208-auditoriya", desc: "Calculus nazorat ishi uchun 1 soatga oddiy ilmiy kalkulyator kerak.",
+        author: "Sardor K.", time: "27 daqiqa oldin", helped: false, photo: null
+      }
+    ];
+
+    let students = [
+      { name: "Javohir Kenjayev", group: "DI-101", points: 40 },
+      { name: "Robiya Matyoqubova", group: "KI-102", points: 95 },
+      { name: "Azizbek Rahimov", group: "DI-201", points: 80 },
+      { name: "Sardor Karimov", group: "AT-104", points: 65 },
+      { name: "Madina Yusupova", group: "MT-101", points: 50 },
+      { name: "Bekzod Olimov", group: "KI-203", points: 35 }
+    ];
+
+    function switchTab(tab, el) {
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("sec-" + tab).classList.add("active");
+      el.classList.add("active");
+      if (tab === "feed") renderFeed();
+      if (tab === "radar") renderRadar();
+      if (tab === "rank") renderLeaderboard();
+    }
+
+    function setTypeFilter(type, el) {
+      currentTypeFilter = type;
+      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      el.classList.add("active");
+      renderFeed();
+    }
+
+    function renderFeed() {
+      const list = document.getElementById("feedList");
+      const filtered = currentTypeFilter === "all" ? posts : posts.filter(p => p.type === currentTypeFilter);
+      list.innerHTML = filtered.map(p => createCardHTML(p)).join("");
+    }
+
+    function createCardHTML(p) {
+      const badge = p.type === "sos"
+        ? `<span class="tag sos">🆘 Tezkor SOS</span>`
+        : `<span class="tag lost">🔍 Topildi / Yo‘qoldi</span>`;
+      const imgHTML = p.photo ? `<img src="${p.photo}" class="card-img" />` : "";
+      const btnHTML = p.helped
+        ? `<button class="btn btn-done">✅ Yordam biriktirildi (+15 ball)</button>`
+        : `<button class="btn btn-green" onclick="helpPost(${p.id})">🤝 Yordam beraman</button>`;
+
+      return `
+        <div class="card">
+          <div class="card-top">${badge}<span class="time">${p.time}</span></div>
+          <div class="card-title">${p.category}</div>
+          ${imgHTML}
+          <div class="card-desc">${p.desc}</div>
+          <div class="card-meta">
+            <span>🏢 ${p.building}</span>
+            <span>📍 ${p.location}</span>
+            <span>👤 ${p.author}</span>
+          </div>
+          ${btnHTML}
+        </div>
+      `;
+    }
+
+    function helpPost(id) {
+      const post = posts.find(p => p.id === id);
+      if (!post || post.helped) return;
+      post.helped = true;
+      myPoints += 15;
+      document.getElementById("myPointsBadge").innerText = `⭐️ ${myPoints} ball`;
+      const me = students.find(s => s.name === currentUser) || students[0];
+      me.points = myPoints;
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      renderFeed();
+      renderRadar();
+    }
+
+    function renderRadar() {
+      const buildings = ["IT bino", "Asosiy bino", "Kutubxona", "Sport zali", "Yotoqxona"];
+      const grid = document.getElementById("buildingGrid");
+      grid.innerHTML = buildings.map(b => {
+        const count = posts.filter(p => p.building === b).length;
+        return `
+          <div class="building-card ${selectedBuilding === b ? 'active' : ''}" onclick="selectBuilding('${b}')">
+            <div class="b-name">🏢 ${b}</div>
+            <div class="b-count">${count} ta faol e'lon</div>
+          </div>
+        `;
+      }).join("");
+
+      const filtered = posts.filter(p => p.building === selectedBuilding);
+      document.getElementById("radarList").innerHTML = filtered.length
+        ? filtered.map(p => createCardHTML(p)).join("")
+        : `<div class="card" style="text-align:center;color:var(--muted);">Bu binoda hozircha faol e'lon yo‘q 🎉</div>`;
+    }
+
+    function selectBuilding(b) {
+      selectedBuilding = b;
+      renderRadar();
+    }
+
+    function selectPostType(type) {
+      newPostType = type;
+      document.getElementById("opt-sos").classList.toggle("active", type === "sos");
+      document.getElementById("opt-lost").classList.toggle("active", type === "lost");
+    }
+
+    function submitPost() {
+      const category = document.getElementById("postCategory").value.trim();
+      const building = document.getElementById("postBuilding").value;
+      const location = document.getElementById("postLocation").value.trim();
+      const desc = document.getElementById("postDesc").value.trim();
+      const fileInput = document.getElementById("postPhoto");
+
+      if (!category || !location || !desc) {
+        alert("Iltimos, toifa, joylashuv va izohni to‘ldiring!");
+        return;
+      }
+
+      const addNew = (photoUrl) => {
+        posts.unshift({
+          id: Date.now(), type: newPostType, category, building, location,
+          desc, author: currentUser, time: "Hozirgina", helped: false, photo: photoUrl
+        });
+        document.getElementById("postCategory").value = "";
+        document.getElementById("postLocation").value = "";
+        document.getElementById("postDesc").value = "";
+        fileInput.value = "";
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+        switchTab("feed", document.querySelector(".nav-btn"));
+      };
+
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => addNew(e.target.result);
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        addNew(null);
+      }
+    }
+
+    function setGroupFilter(grp, el) {
+      currentGroupFilter = grp;
+      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      el.classList.add("active");
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      let list = [...students].sort((a, b) => b.points - a.points);
+      if (currentGroupFilter !== "all") {
+        list = list.filter(s => s.group.startsWith(currentGroupFilter));
+      }
+
+      const podium = document.getElementById("podiumBox");
+      if (list.length >= 3) {
+        podium.innerHTML = `
+          <div class="p-col p-2"><div class="p-medal">🥈</div><div class="p-name">${list[1].name}</div><div class="p-pts">${list[1].points} ball</div></div>
+          <div class="p-col p-1"><div class="p-medal">🥇</div><div class="p-name">${list[0].name}</div><div class="p-pts">${list[0].points} ball</div></div>
+          <div class="p-col p-3"><div class="p-medal">🥉</div><div class="p-name">${list[2].name}</div><div class="p-pts">${list[2].points} ball</div></div>
+        `;
+      } else {
+        podium.innerHTML = "";
+      }
+
+      document.getElementById("leaderboardList").innerHTML = list.map((s, idx) => `
+        <div class="rank-row">
+          <div class="rank-left">
+            <div class="rank-num">#${idx + 1}</div>
+            <div class="rank-info">
+              <h4>${s.name}</h4>
+              <span>${s.group}</span>
+            </div>
+          </div>
+          <div class="rank-pts">${s.points} ball</div>
+        </div>
+      `).join("");
+    }
+
+    renderFeed();
+  </script>
+</body>
+</html>
